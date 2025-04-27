@@ -1,2 +1,2 @@
-# telemetry-sidecar
-Telemetry Sidecar Agent
+# Telemetry Sidecar Agent written in Rust
+
