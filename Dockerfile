@@ -40,7 +40,7 @@ COPY src ./src
 RUN cargo build --release --target ${TARGET_PLATFORM} --bin ${APP_NAME}
 
 ####################################################################################################
-# Runtime container
+# Runtime container, use smallest possible base image
 ####################################################################################################
 FROM scratch
 

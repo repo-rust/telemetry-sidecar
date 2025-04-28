@@ -49,7 +49,7 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
         //
         let (stream, _) = listener.accept().await.context("Can't accept connection")?;
 
-        println!("New connection established");
+        println!("New client connected");
 
         let reader = BufReader::new(stream);
         let mut lines = reader.lines();
@@ -69,6 +69,6 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
             }
         }
 
-        println!("Connection closed.");
+        println!("Client connection closed.");
     }
 }

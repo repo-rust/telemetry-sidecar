@@ -34,4 +34,17 @@ cargo run --bin telemetry-sidecar
 cargo run --bin client
 ```
 
+## Running Server and Client using Docker compose
+
+* start compose
+
+```bash
+./run-docker.sh
+```
+
+* stop compose service
+
+```bash
+./stop-docker.sh
+```
 

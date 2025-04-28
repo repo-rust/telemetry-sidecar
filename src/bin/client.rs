@@ -8,6 +8,9 @@ use tokio::time::sleep;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<(), anyhow::Error> {
+    println!("Client will be started with initial delay of 3 seconds...");
+    sleep(Duration::from_secs(3)).await;
+
     let metrics_socket_path = &unix_domain_socket_path();
 
     let mut stream = UnixStream::connect(metrics_socket_path)

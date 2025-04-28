@@ -1,0 +1,27 @@
+services:
+  telemetry-sidecar:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_NAME: telemetry-sidecar  # Build argument for APP_NAME
+    container_name: telemetry-sidecar
+    user: root
+    volumes:
+      - telemetry-sidecar-volume:/tmp/
+    restart: no  # This ensures the container stops when it exits (like `--rm`)
+
+  telemetry-sidecar-client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_NAME: client  # Build argument for telemetry-sidecar-client
+    container_name: telemetry-sidecar-client
+    volumes:
+      - telemetry-sidecar-volume:/tmp/
+    restart: no  # This ensures the container stops when it exits (like `--rm`)
+
+volumes:
+  telemetry-sidecar-volume:
+    driver: local
