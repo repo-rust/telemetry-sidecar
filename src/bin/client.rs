@@ -1,6 +1,9 @@
 use anyhow::Context;
+use chrono::Utc;
+use std::time::Duration;
 use tokio::io::AsyncWriteExt;
 use tokio::net::UnixStream;
+use tokio::time::sleep;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<(), anyhow::Error> {
@@ -11,19 +14,44 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
         .context("failed to connect to metrics server")?;
 
     /*
-    https://docs.influxdata.com/influxdb/cloud/reference/syntax/line-protocol/
+    https://github.com/prometheus/docs/blob/main/content/docs/instrumenting/exposition_formats.md
     */
 
-    let metric = "http_requests_total{method=\"post\",code=\"200\",region=\"us-ashburn-1\"} 123 1745825678238\n";
+    for i in 0..5 {
+        // Unix timestamp in ms
+        let timestamp_ms = Utc::now().timestamp_millis();
+
+        let mut metric = format!(
+            "http_requests_total{{method=\"post\",code=\"200\",region=\"us-ashburn-1\"}} 123 {}\n",
+            timestamp_ms
+        );
+
+        if i == 2 {
+            metric = format!(
+                "{{method=\"post\",code=\"200\",region=\"us-ashburn-1\"}} 123 {}\n",
+                timestamp_ms
+            );
+        }
+        stream
+            .write_all(metric.as_bytes())
+            .await
+            .context("Failed to send message")?;
+
+        println!(
+            "{} metric {} sent",
+            if i == 2 { "BAD" } else { "Normal" },
+            i + 1,
+        );
+
+        sleep(Duration::from_secs(1)).await;
+    }
 
     stream
-        .write_all(metric.as_bytes())
+        .shutdown()
         .await
-        .context("failed to send message")?;
+        .context("Failed to shut down properly")?;
 
-    stream.shutdown().await.context("failed to shutdown")?;
-
-    println!("Message sent!");
+    println!("All metrics sent!!!");
 
     Ok(())
 }

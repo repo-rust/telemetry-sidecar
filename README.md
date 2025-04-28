@@ -20,4 +20,18 @@ cargo nextest run
 cargo clippy
 ```
 
+## Integration Run
+
+* Run server using:
+
+```bash
+cargo run --bin telemetry-sidecar
+```
+
+* Run client using:
+
+```bash
+cargo run --bin client
+```
+
 
