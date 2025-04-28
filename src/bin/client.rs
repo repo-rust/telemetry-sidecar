@@ -1,13 +1,14 @@
 use anyhow::Context;
 use chrono::Utc;
 use std::time::Duration;
+use telemetry_sidecar::unix_domain_socket_path;
 use tokio::io::AsyncWriteExt;
 use tokio::net::UnixStream;
 use tokio::time::sleep;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<(), anyhow::Error> {
-    let metrics_socket_path = "/tmp/metrics.sock";
+    let metrics_socket_path = &unix_domain_socket_path();
 
     let mut stream = UnixStream::connect(metrics_socket_path)
         .await
@@ -17,7 +18,7 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
     https://github.com/prometheus/docs/blob/main/content/docs/instrumenting/exposition_formats.md
     */
 
-    for i in 0..5 {
+    for i in 0..1_000_000 {
         // Unix timestamp in ms
         let timestamp_ms = Utc::now().timestamp_millis();
 
@@ -26,22 +27,26 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
             timestamp_ms
         );
 
-        if i == 2 {
+        if i % 10 == 0 {
             metric = format!(
                 "{{method=\"post\",code=\"200\",region=\"us-ashburn-1\"}} 123 {}\n",
                 timestamp_ms
             );
-        }
-        stream
-            .write_all(metric.as_bytes())
-            .await
-            .context("Failed to send message")?;
 
-        println!(
-            "{} metric {} sent",
-            if i == 2 { "BAD" } else { "Normal" },
-            i + 1,
-        );
+            stream
+                .write_all(metric.as_bytes())
+                .await
+                .context("Failed to send message")?;
+
+            println!("Bad metric {} sent", i + 1,);
+        } else {
+            stream
+                .write_all(metric.as_bytes())
+                .await
+                .context("Failed to send message")?;
+
+            println!("Metric {} sent", i + 1,);
+        }
 
         sleep(Duration::from_secs(1)).await;
     }

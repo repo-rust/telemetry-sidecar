@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telemetry-sidecar
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: telemetry-sidecar
+  template:
+    metadata:
+      labels:
+        app: telemetry-sidecar
+    spec:
+      containers:
+        - name: telemetry-sidecar
+          image: telemetry-sidecar:latest
+          imagePullPolicy: Never
+          volumeMounts:
+            - mountPath: /tmp/
+              name: socket-volume
+        - name: client
+          image: telemetry-sidecar-client:latest
+          imagePullPolicy: Never
+          volumeMounts:
+            - mountPath: /tmp/
+              name: socket-volume
+      volumes:
+        - name: socket-volume
+          emptyDir: { }

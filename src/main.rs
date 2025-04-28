@@ -1,5 +1,7 @@
+mod lib;
 mod line_protocol;
 
+use crate::lib::unix_domain_socket_path;
 use crate::line_protocol::Measurement;
 use anyhow::Context;
 use std::path::Path;
@@ -10,7 +12,7 @@ use tokio::time::sleep;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<(), anyhow::Error> {
-    let metrics_socket_path = "/tmp/metrics.sock";
+    let metrics_socket_path = &unix_domain_socket_path();
 
     if Path::new(metrics_socket_path).exists() {
         tokio::fs::remove_file(metrics_socket_path)
@@ -21,7 +23,7 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
             ))?;
     }
 
-    let listener = UnixListener::bind(metrics_socket_path).context(format!(
+    let listener = UnixListener::bind(&metrics_socket_path).context(format!(
         "Can't listen on socket file '{}'",
         metrics_socket_path
     ))?;
