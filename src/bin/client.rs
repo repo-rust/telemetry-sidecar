@@ -12,8 +12,9 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
 
     /*
     https://docs.influxdata.com/influxdb/cloud/reference/syntax/line-protocol/
-     */
-    let metric = "cpu,region=us-ashburn-1 usage=0.5 1556813561098000000\n";
+    */
+
+    let metric = "http_requests_total{method=\"post\",code=\"200\",region=\"us-ashburn-1\"} 123 1745825678238\n";
 
     stream
         .write_all(metric.as_bytes())
