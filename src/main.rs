@@ -34,40 +34,9 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
 
     let cancellation_token = CancellationToken::new();
 
-    let cancellation_token_copy = cancellation_token.clone();
-    tokio::spawn(async move {
-        println!("Graceful shutdown listener started");
+    tokio::spawn(graceful_shutdown_listener(cancellation_token.clone()));
 
-        match signal(SignalKind::terminate()) {
-            Ok(mut sigterm) => {
-                sigterm.recv().await;
-                println!("SIGTERM received!");
-                cancellation_token_copy.cancel();
-            }
-            Err(err) => {
-                eprintln!("Unable to listen for SIGTERM signal: {}", err);
-                // we also shut down in case of error
-                cancellation_token_copy.cancel();
-            }
-        }
-    });
-
-    // Spawn metrics publisher thread
-    let cancellation_token_copy = cancellation_token.clone();
-    tokio::spawn(async move {
-        println!("Metrics publisher started");
-        loop {
-            tokio::select! {
-                _ = cancellation_token_copy.cancelled() => {
-                    println!("Metrics publisher interrupted");
-                    break;
-                }
-                _ = tokio::time::sleep(Duration::from_secs(10)) => {
-                     println!("Metrics publisher checking for new metrics to publish");
-                }
-            }
-        }
-    });
+    tokio::spawn(metrics_publisher(cancellation_token.clone()));
 
     //
     // Accept Unix socket connection (we expect to have only one per sidecar) and handle all
@@ -113,4 +82,43 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
     println!("Client connection closed.");
 
     Ok(())
+}
+
+///
+/// Starts a background task that listens for the SIGTERM signal and notifies other tasks
+/// to shut down using a CancellationToken.
+///
+async fn graceful_shutdown_listener(cancellation_token: CancellationToken) {
+    println!("Graceful shutdown listener started");
+
+    match signal(SignalKind::terminate()) {
+        Ok(mut sigterm) => {
+            sigterm.recv().await;
+            println!("SIGTERM received!");
+            cancellation_token.cancel();
+        }
+        Err(err) => {
+            eprintln!("Unable to listen for SIGTERM signal: {}", err);
+            // we also shut down in case of error
+            cancellation_token.cancel();
+        }
+    }
+}
+
+///
+/// Metrics publisher async task.
+///
+async fn metrics_publisher(cancellation_token: CancellationToken) {
+    println!("Metrics publisher started");
+    loop {
+        tokio::select! {
+            _ = cancellation_token.cancelled() => {
+                println!("Metrics publisher interrupted");
+                break;
+            }
+            _ = tokio::time::sleep(Duration::from_secs(10)) => {
+                 println!("Metrics publisher checking for new metrics to publish");
+            }
+        }
+    }
 }
