@@ -15,13 +15,13 @@ spec:
       containers:
         - name: telemetry-sidecar
           image: telemetry-sidecar:latest
-          imagePullPolicy: Never
+          imagePullPolicy: Never # Always
           volumeMounts:
             - mountPath: /tmp/
               name: socket-volume
         - name: client
           image: telemetry-sidecar-client:latest
-          imagePullPolicy: Never
+          imagePullPolicy: Never # Always
           volumeMounts:
             - mountPath: /tmp/
               name: socket-volume

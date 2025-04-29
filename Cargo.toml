@@ -6,4 +6,5 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.98"
 chrono = "0.4.40"
-tokio = { version = "1.44.2", features = ["full", "net", "process", "fs"] }
+tokio = { version = "1.44.2", features = ["full"] }
+tokio-util = "0.7.15"
