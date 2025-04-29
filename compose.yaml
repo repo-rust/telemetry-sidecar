@@ -7,8 +7,11 @@ services:
         APP_NAME: telemetry-sidecar  # Build argument for APP_NAME
     container_name: telemetry-sidecar
     user: root
+    environment:
+      - DATABASE_URL=/app/data/metrics-database.db
     volumes:
       - telemetry-sidecar-volume:/tmp/
+      - ./data:/app/data  # SQLite DB file
     restart: no  # This ensures the container stops when it exits (like `--rm`)
 
   telemetry-sidecar-client:

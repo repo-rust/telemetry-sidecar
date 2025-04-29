@@ -1,12 +1,18 @@
+mod db_utils;
 mod line_protocol;
+mod metric_storage;
 
-use crate::line_protocol::Measurement;
+mod metric_publisher;
+
+use crate::line_protocol::Metric;
+use crate::metric_publisher::MetricPublisher;
+use crate::metric_storage::MetricStorage;
 use anyhow::Context;
 use std::path::Path;
 use std::time::Duration;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::net::UnixListener;
-use tokio::signal::unix::{signal, SignalKind};
+use tokio::signal::unix::{SignalKind, signal};
 use tokio_util::sync::CancellationToken;
 
 #[tokio::main]
@@ -32,6 +38,8 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
         metrics_socket_path
     );
 
+    let metric_storage = MetricStorage::new()?;
+
     let cancellation_token = CancellationToken::new();
 
     tokio::spawn(graceful_shutdown_listener(cancellation_token.clone()));
@@ -50,6 +58,7 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
     let mut lines = reader.lines();
 
     let cancellation_token_copy = cancellation_token.clone();
+
     loop {
         tokio::select! {
             _ = cancellation_token_copy.cancelled() => {
@@ -62,9 +71,9 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
                         line.pop();
                     }
 
-                    match Measurement::new(&line) {
+                    match Metric::new(&line) {
                         Ok(measurement) => {
-                            println!("Received measurement: {:?}", measurement);
+                            metric_storage.store_metric(measurement)?;
                         }
                         Err(error_msg) => {
                             println!("Error during measurement processing: {}", error_msg);
@@ -87,6 +96,7 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
 ///
 /// Starts a background task that listens for the SIGTERM signal and notifies other tasks
 /// to shut down using a CancellationToken.
+/// For details check https://tokio.rs/tokio/topics/shutdown
 ///
 async fn graceful_shutdown_listener(cancellation_token: CancellationToken) {
     println!("Graceful shutdown listener started");
@@ -110,6 +120,9 @@ async fn graceful_shutdown_listener(cancellation_token: CancellationToken) {
 ///
 async fn metrics_publisher(cancellation_token: CancellationToken) {
     println!("Metrics publisher started");
+
+    let mut metric_publisher = MetricPublisher::new().expect("Can't create metric publisher");
+
     loop {
         tokio::select! {
             _ = cancellation_token.cancelled() => {
@@ -117,7 +130,9 @@ async fn metrics_publisher(cancellation_token: CancellationToken) {
                 break;
             }
             _ = tokio::time::sleep(Duration::from_secs(10)) => {
-                 println!("Metrics publisher checking for new metrics to publish");
+                if let Err(error) = metric_publisher.publish_new_metrics() {
+                    eprintln!("'check_for_new_metrics' call failed, err {}", error);
+                };
             }
         }
     }
