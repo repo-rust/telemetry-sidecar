@@ -1,4 +1,4 @@
-use anyhow::{Context, bail};
+use anyhow::{bail, Context};
 use std::str::FromStr;
 
 ///
@@ -6,7 +6,7 @@ use std::str::FromStr;
 /// https://github.com/prometheus/docs/blob/main/content/docs/instrumenting/exposition_formats.md
 ///
 #[derive(Debug, PartialEq)]
-pub struct Metric {
+pub(crate) struct Metric {
     pub id: u64,
     pub name: String,
     pub tags: String,
@@ -18,7 +18,7 @@ impl Metric {
     ///
     /// Create metric from a single line
     ///
-    pub fn new(line: &str) -> anyhow::Result<Self, anyhow::Error> {
+    pub(crate) fn new(line: &str) -> anyhow::Result<Self, anyhow::Error> {
         // http_requests_total{method=\"post\",code=\"200\",region=\"us-ashburn-1\"} 123 174582567823
 
         let parts = line.split_whitespace().collect::<Vec<&str>>();
@@ -60,18 +60,18 @@ impl Metric {
         })
     }
 
-    pub fn get_name(&self) -> String {
+    pub(crate) fn get_name(&self) -> String {
         self.name.clone()
     }
-    pub fn get_tags(&self) -> String {
+    pub(crate) fn get_tags(&self) -> String {
         self.tags.clone()
     }
 
-    pub fn get_timestamp(&self) -> u64 {
+    pub(crate) fn get_timestamp(&self) -> u64 {
         self.timestamp.unwrap_or(0)
     }
 
-    pub fn get_value(&self) -> String {
+    pub(crate) fn get_value(&self) -> String {
         self.value.clone()
     }
 }

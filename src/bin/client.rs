@@ -1,16 +1,21 @@
-use anyhow::{Context, bail};
+use anyhow::{bail, Context};
 use chrono::Utc;
-use rand::{Rng, rng};
+use rand::{rng, Rng};
 use std::time::Duration;
 use telemetry_sidecar::unix_domain_socket_path;
 use tokio::io::AsyncWriteExt;
 use tokio::net::UnixStream;
 use tokio::select;
-use tokio::signal::unix::{SignalKind, signal};
+use tokio::signal::unix::{signal, SignalKind};
 use tokio::time::sleep;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<(), anyhow::Error> {
+    //
+    // For Prometheus line protocol check https://github.com/prometheus/docs/blob/main/content/docs/instrumenting/exposition_formats.md
+    // For random number generations check https://rust-random.github.io/book/quick-start.html
+    //
+
     println!("Client will be started with initial delay of 3 seconds...");
     sleep(Duration::from_secs(3)).await;
 
@@ -29,7 +34,6 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
         // Unix timestamp in ms
         let timestamp_ms = Utc::now().timestamp_millis();
 
-        // https://github.com/prometheus/docs/blob/main/content/docs/instrumenting/exposition_formats.md
         let mut metric = format!(
             "http_requests_total{{method=\"post\",code=\"200\",region=\"us-ashburn-1\"}} {} {}\n",
             rand.random_range(1..=1000),

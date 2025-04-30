@@ -2,9 +2,11 @@ mod db_utils;
 mod line_protocol;
 mod metric_storage;
 
+mod metric_dao;
 mod metric_publisher;
 
 use crate::line_protocol::Metric;
+use crate::metric_dao::MetricDao;
 use crate::metric_publisher::MetricPublisher;
 use crate::metric_storage::MetricStorage;
 use anyhow::Context;
@@ -12,7 +14,7 @@ use std::path::Path;
 use std::time::Duration;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::net::UnixListener;
-use tokio::signal::unix::{SignalKind, signal};
+use tokio::signal::unix::{signal, SignalKind};
 use tokio_util::sync::CancellationToken;
 
 #[tokio::main]
@@ -38,7 +40,10 @@ async fn main() -> anyhow::Result<(), anyhow::Error> {
         metrics_socket_path
     );
 
-    let metric_storage = MetricStorage::new()?;
+    let metric_dao = MetricDao::new().context("Can't create 'MetricDao'")?;
+    metric_dao.create_db_tables()?;
+
+    let metric_storage = MetricStorage::new(metric_dao);
 
     let cancellation_token = CancellationToken::new();
 
@@ -121,7 +126,8 @@ async fn graceful_shutdown_listener(cancellation_token: CancellationToken) {
 async fn metrics_publisher(cancellation_token: CancellationToken) {
     println!("Metrics publisher started");
 
-    let mut metric_publisher = MetricPublisher::new().expect("Can't create metric publisher");
+    let metric_dao = MetricDao::new().expect("Can't create 'MetricDao'");
+    let metric_publisher = MetricPublisher::new(metric_dao);
 
     loop {
         tokio::select! {
