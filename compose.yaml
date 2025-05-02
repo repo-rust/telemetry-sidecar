@@ -25,6 +25,24 @@ services:
       - telemetry-sidecar-volume:/tmp/
     restart: no  # This ensures the container stops when it exits (like `--rm`)
 
+  influxdb:
+    image: influxdb:2.7.11
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=supersecret #passwords must be between 8 and 72 characters long
+      - DOCKER_INFLUXDB_INIT_ORG=my-org
+      - DOCKER_INFLUXDB_INIT_BUCKET=my-bucket
+      - DOCKER_INFLUXDB_INIT_RETENTION=1w
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=my-auth-token
+    restart: no
+
 volumes:
+  influxdb-data:
+    driver: local
   telemetry-sidecar-volume:
     driver: local
