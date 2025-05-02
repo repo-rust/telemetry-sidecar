@@ -2,7 +2,7 @@ use anyhow::Context;
 use rusqlite::Connection;
 use std::env;
 
-pub(crate) fn create_connection() -> anyhow::Result<Connection, anyhow::Error> {
+pub fn create_connection() -> anyhow::Result<Connection, anyhow::Error> {
     let db_name = env::var("DATABASE_URL").context("'DATABASE_URL' not specified")?;
 
     println!("Using DATABASE_URL: {}", db_name);

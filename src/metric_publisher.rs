@@ -1,4 +1,4 @@
-use crate::metric_dao::MetricDao;
+use telemetry_sidecar::metric_dao::MetricDao;
 
 pub(crate) struct MetricPublisher {
     dao: MetricDao,
@@ -21,7 +21,11 @@ impl MetricPublisher {
                 single_metric
             );
 
-            self.dao.delete_metric_by_id(single_metric.id)?;
+            self.dao.delete_metric_by_id(
+                single_metric
+                    .id
+                    .expect("Metric.id received from DB is None"),
+            )?;
         }
 
         Ok(())

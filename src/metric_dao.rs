@@ -1,9 +1,8 @@
-use crate::db_utils::create_connection;
 use crate::line_protocol::Metric;
 use anyhow::Context;
 use rusqlite::Connection;
 
-pub(crate) struct MetricDao {
+pub struct MetricDao {
     conn: Connection,
 }
 
@@ -26,24 +25,23 @@ impl MetricDao {
 
     const DELETE_METRIC_BY_ID: &'static str = "DELETE FROM metric WHERE id = ?1";
 
-    pub fn new() -> anyhow::Result<Self, anyhow::Error> {
-        let conn = create_connection()?;
-        Ok(Self { conn })
+    pub fn new(conn: Connection) -> Self {
+        Self { conn }
     }
 
-    pub(crate) fn create_db_tables(&self) -> anyhow::Result<(), anyhow::Error> {
-        let conn = create_connection()?;
-
-        conn.execute(MetricDao::DROP_METRIC_TABLE, [])
+    pub fn create_db_tables(&self) -> anyhow::Result<(), anyhow::Error> {
+        self.conn
+            .execute(MetricDao::DROP_METRIC_TABLE, [])
             .context("Can't drop 'metric' table")?;
 
-        conn.execute(MetricDao::CREATE_METRIC_TABLE, [])
+        self.conn
+            .execute(MetricDao::CREATE_METRIC_TABLE, [])
             .context("Can't create 'metric' table")?;
 
         Ok(())
     }
 
-    pub(crate) fn insert_metric(&self, metric: Metric) -> anyhow::Result<(), anyhow::Error> {
+    pub fn insert_metric(&self, metric: Metric) -> anyhow::Result<(), anyhow::Error> {
         self.conn.execute(
             MetricDao::INSERT_METRIC_SQL,
             [
@@ -59,12 +57,12 @@ impl MetricDao {
         Ok(())
     }
 
-    pub(crate) fn list_metrics(&self) -> anyhow::Result<Vec<Metric>, anyhow::Error> {
+    pub fn list_metrics(&self) -> anyhow::Result<Vec<Metric>, anyhow::Error> {
         let mut stmt = self.conn.prepare(MetricDao::SELECT_METRICS_QUERY)?;
 
         let metrics = stmt.query_map([], |row| {
             Ok(Metric {
-                id: row.get(0)?,
+                id: Some(row.get(0)?),
                 name: row.get(1)?,
                 tags: row.get(2)?,
                 value: row.get(3)?,
@@ -81,7 +79,7 @@ impl MetricDao {
         Ok(metrics_vec)
     }
 
-    pub(crate) fn delete_metric_by_id(&self, metric_id: u64) -> anyhow::Result<(), anyhow::Error> {
+    pub fn delete_metric_by_id(&self, metric_id: u64) -> anyhow::Result<(), anyhow::Error> {
         self.conn
             .execute(MetricDao::DELETE_METRIC_BY_ID, [metric_id])?;
 

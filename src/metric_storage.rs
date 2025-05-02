@@ -1,5 +1,5 @@
-use crate::line_protocol::Metric;
-use crate::metric_dao::MetricDao;
+use telemetry_sidecar::line_protocol::Metric;
+use telemetry_sidecar::metric_dao::MetricDao;
 
 pub(crate) struct MetricStorage {
     dao: MetricDao,
